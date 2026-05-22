@@ -37,4 +37,8 @@ The script was running into issues and was difficult to troubleshoot without mes
 
 ---
 
+### Added analysis script
+Created the analysis script that gets the reviews of a specified movie and runs the reviews through an LLM to extract a sentiment score and any relevant tags. One of the largest challenges with this script was finding a model the could quickly process a large amount of reviews with enough reasoning to provide accurate results. The other challenge was creating a prompt that would provide accurate results. Gemini's **gemini-3.1-flash-lite** model provided good results, but due to cost and usage constraints, I settled for using the **llama3.2:3b** model running locally on my laptop as it was able to provide okay results while taking about 2 seconds per review. With the addition of tags, I had to create two additional tables: tags, tagmovie. Currently it is only storing one instance of each tag, but it may be redesigned to allow multiple instance to find the most common tags among reviews. Created a dashboard in tableau to visualize the new data with a box plot comparing actual scores to the sentiment scores of their reviews and a tag bubble chart.
+
+![Vis](./docs/images/commit-3-vis.png)
 
