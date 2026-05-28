@@ -1,89 +1,22 @@
-from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-from peewee import *
 import requests as req
 import datetime as dt
 import time
 import re
 import hashlib
-import os
 import argparse
 from curl_cffi import requests
 import random
 
-## Load Environment Variables
-load_dotenv()
+from models.dbmodels import *
 
+## Handle Arguments
 parser = argparse.ArgumentParser(
                                     prog='Movie Extract',
                                     description='Extracts movie data from letterboxd from the provided url'
                                 )
 parser.add_argument('url', help='Enter Letterboxd movie URL of format https://letterboxd.com/film/(movie)/')
 args = parser.parse_args()
-
-## Database Connector
-db = PostgresqlDatabase(os.environ.get('DATABASE', 'postgres'),
-                    user=os.environ.get('DB_USER', ''),
-                    password=os.environ.get('DB_PASS', ''),
-                    host=os.environ.get('DB_HOST', 'localhost'),
-                    port=int(os.environ.get('DB_PORT', '5432')))
-
-## Schema Definitions
-class BaseModel(Model):
-    class Meta():
-        database = db
-
-class Directors(BaseModel):
-    name = CharField(unique=True)
-
-class Actors(BaseModel):
-    name = CharField(unique=True)
-
-class Genres(BaseModel):
-    name = CharField(unique=True)
-
-class Movies(BaseModel):
-    slug = CharField(unique=True)
-    name = CharField()
-    description = TextField()
-    release_year = IntegerField()
-    status = CharField()
-
-class ActorMovie(BaseModel):
-    actor = ForeignKeyField(Actors, backref='movies_link')
-    movie = ForeignKeyField(Movies, backref='actors_link')
-    class Meta():
-        indexes = (
-            (('actor', 'movie'), True),
-        )
-
-class DirectorMovie(BaseModel):
-    director = ForeignKeyField(Directors, backref='movies_link')
-    movie = ForeignKeyField(Movies, backref='directors_link')
-    class Meta():
-        indexes = (
-            (('director', 'movie'), True),
-        )
-
-class GenreMovie(BaseModel):
-    genre = ForeignKeyField(Genres, backref='movies_link')
-    movie = ForeignKeyField(Movies, backref='genres_link')
-    class Meta():
-        indexes = (
-            (('genre', 'movie'), True),
-        )
-
-class Reviews(BaseModel):
-    post_time = DateTimeField()
-    rating_score = IntegerField()
-    sentiment_score = IntegerField()
-    full_review = TextField()
-    review_hash = CharField(max_length=32)
-    movie = ForeignKeyField(Movies, backref='reviews')
-    class Meta():
-        indexes = (
-            (('post_time', 'rating_score', 'review_hash', 'movie'), True),
-        )
 
 HEADERS = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -92,8 +25,8 @@ HEADERS = {
             }
 
 ## Initialize Database
-db.connect()
-db.create_tables([Directors, Actors, Genres, Movies, Reviews, ActorMovie, DirectorMovie, GenreMovie])
+DB.connect()
+DB.create_tables([Directors, Actors, Genres, Movies, Reviews, ActorMovie, DirectorMovie, GenreMovie])
 
 def extract_reviews(movie_slug, movie_id):
     """Takes in the movie slug with the movie id. Scrapes reviews from letterboxd using pagination. Then loads the reviews into the database."""
@@ -104,7 +37,11 @@ def extract_reviews(movie_slug, movie_id):
     print('Scraping reviews...')
     start_time = time.time()
     while True:
-        res = session.get(f'https://letterboxd.com/film/{movie_slug}/reviews/by/added-earliest/page/{page}')
+        try:
+            res = session.get(f'https://letterboxd.com/film/{movie_slug}/reviews/by/added-earliest/page/{page}')
+        except Exception as err:
+            print(f'Failed to retrieve reviews for {movie_slug} on page {page}: {err}')
+            continue
         if res.status_code != 200:
             print('Script is being blocked!')
             break

@@ -3,7 +3,7 @@
 ## Overview
 This project consists of extracting reviews from movie rating sites into a database, integrating an LLM to pull the actual sentiment from a review, and displaying analytics. Data will be pulled on request through a web interface. The user will be able to search for a movie, and if that movie is available it will display the appropriate analytic dashboard. Otherwise, it will find and extract the new movie. The goal of this project is to showcase my capabilites in building and designing data systems and pipelines.
 
-I want to be able to track my prorgress and challenges, so I am documenting my progress as I go along in the Timeline & Changelog section of this document.
+I want to be able to track my progress and challenges, so I am documenting my progress as I go along in the Timeline & Changelog section of this document.
 
 ## Design
 
@@ -42,3 +42,11 @@ Created the analysis script that gets the reviews of a specified movie and runs 
 
 ![Vis](./docs/images/commit-3-vis.png)
 
+---
+
+### Script improvements and project cleanup
+Updated both scripts to import database models from separate file to decrease code duplication. Modified Tags table to allow multiple occurences of each tag. This allows for displaying common tags amost reviews, which provides more accurate representation of the movie. Found a case where the extract script would crash if the webpage did not load properly. I wrapped the request in a try-except that will skip the page in this case. Also added a match-case statement that would skip reviews that already have a sentiment score by default, and I added an argument that would let you toggle this behavior on/off. Included is an example tile chart that can be created from the tags table improvement.
+
+![Vis](./docs/images/commit-4-vis.png)
+
+---
