@@ -23,6 +23,60 @@ I want to be able to track my progress and challenges, so I am documenting my pr
 
 **API Framework:** FastAPI
 
+## Current Status
+
+| Component | Status |
+|-----------|--------|
+| Extraction (`scripts/extract.py`): scrapes Letterboxd movie details and reviews into PostgreSQL | ✅ Working |
+| Analysis (`scripts/analysis.py`): LLM sentiment score and tags for each review | ✅ Working (local Llama 3.2 via Ollama) |
+| Dashboards | ✅ Tableau (see screenshots below) |
+| Web interface + FastAPI + RabbitMQ on-demand pipeline | 🚧 Planned |
+
+## Project Structure
+
+```
+models/dbmodels.py     Peewee ORM models (movies, reviews, actors, directors, genres, tags + link tables)
+scripts/extract.py     Letterboxd scraper → PostgreSQL
+scripts/analysis.py    Review sentiment + tag extraction with an LLM
+docs/images/           Design, schema and dashboard screenshots
+```
+
+## Getting Started
+
+**Prerequisites:** Python 3.10+, PostgreSQL, and [Ollama](https://ollama.com) with the `llama3.2:3b` model pulled
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # fill in your PostgreSQL connection details
+ollama pull llama3.2:3b
+```
+
+Run the scripts from the repository root:
+
+```bash
+# 1. Extract a movie and its reviews (tables are created automatically)
+python -m scripts.extract https://letterboxd.com/film/<movie-slug>/
+
+# 2. Score the reviews' sentiment and extract tags
+python -m scripts.analysis <movie-slug>          # skips already-scored reviews
+python -m scripts.analysis <movie-slug> --update # re-scores everything
+```
+
+## Future Work
+
+- [ ] Build the web interface: search for a movie, show its dashboard, and trigger extraction if it isn't in the database yet
+- [ ] Add a FastAPI service and a RabbitMQ queue so extraction and analysis run as background jobs on request
+- [ ] Replace the Tableau dashboards with in-app charts so the project is self-contained
+- [ ] Fix a possible infinite loop in `extract_reviews`: a request exception `continue`s without moving to the next page or retrying with backoff
+- [ ] Batch reviews in LLM calls and run analysis concurrently to speed it up (currently about 2 seconds per review)
+- [ ] Evaluate sentiment accuracy against a labeled sample, and compare models (local Llama vs. Gemini Flash-Lite)
+- [ ] Add a `docker-compose.yml` with PostgreSQL and Ollama for one-command setup
+- [ ] Use database migrations (for example peewee-migrate) instead of `create_tables`
+- [ ] Respect the site's robots.txt and rate limits, and cache pages to avoid re-scraping
+- [ ] Add tests for the parsing logic using saved HTML fixtures
+
 ## Timeline & Changelog
 
 ### Initial commit with added extraction
