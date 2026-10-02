@@ -69,7 +69,6 @@ python -m scripts.analysis <movie-slug> --update # re-scores everything
 - [ ] Build the web interface: search for a movie, show its dashboard, and trigger extraction if it isn't in the database yet
 - [ ] Add a FastAPI service and a RabbitMQ queue so extraction and analysis run as background jobs on request
 - [ ] Replace the Tableau dashboards with in-app charts so the project is self-contained
-- [ ] Fix a possible infinite loop in `extract_reviews`: a request exception `continue`s without moving to the next page or retrying with backoff
 - [ ] Batch reviews in LLM calls and run analysis concurrently to speed it up (currently about 2 seconds per review)
 - [ ] Evaluate sentiment accuracy against a labeled sample, and compare models (local Llama vs. Gemini Flash-Lite)
 - [ ] Add a `docker-compose.yml` with PostgreSQL and Ollama for one-command setup

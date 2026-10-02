@@ -32,6 +32,8 @@ def extract_reviews(movie_slug, movie_id):
     """Takes in the movie slug with the movie id. Scrapes reviews from letterboxd using pagination. Then loads the reviews into the database."""
     REVIEW_LIST = set()
     page = 1
+    MAX_RETRIES = 3
+    retries = 0
     session = requests.Session(impersonate="chrome")
     session.headers.update(HEADERS)
     print('Scraping reviews...')
@@ -40,8 +42,15 @@ def extract_reviews(movie_slug, movie_id):
         try:
             res = session.get(f'https://letterboxd.com/film/{movie_slug}/reviews/by/added-earliest/page/{page}')
         except Exception as err:
-            print(f'Failed to retrieve reviews for {movie_slug} on page {page}: {err}')
+            retries += 1
+            print(f'Failed to retrieve reviews for {movie_slug} on page {page} (attempt {retries}/{MAX_RETRIES}): {err}')
+            if retries >= MAX_RETRIES:
+                print('Giving up and saving the reviews collected so far.')
+                break
+            # Back off before retrying the same page
+            time.sleep(5 * retries)
             continue
+        retries = 0
         if res.status_code != 200:
             print('Script is being blocked!')
             break
@@ -64,7 +73,7 @@ def extract_reviews(movie_slug, movie_id):
                 print('Failed to add review!', err)
         if len(reviews) < 12:
             break
-        session.headers.update({"Referer": "https://letterboxd.com/film/{movie_slug}/reviews/page/{page}"})
+        session.headers.update({"Referer": f"https://letterboxd.com/film/{movie_slug}/reviews/page/{page}"})
         page=page+1
         # Please dont rate limit me
         time.sleep(random.uniform(3.0, 7.0))
